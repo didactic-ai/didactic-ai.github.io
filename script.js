@@ -1,6 +1,18 @@
-const objects = ['fas fa-star', 'fas fa-heart', 'fas fa-bell', 'fas fa-apple-alt', 'fas fa-car'];
-const objectNames = ['stars', 'hearts', 'bells', 'apples', 'cars'];
-const diceIcons = ['fas fa-dice-one', 'fas fa-dice-two', 'fas fa-dice-three', 'fas fa-dice-four', 'fas fa-dice-five'];
+const objects = [
+    'fas fa-star', 'fas fa-heart', 'fas fa-bell', 'fas fa-apple-alt', 'fas fa-car',
+    'fas fa-sun', 'fas fa-moon', 'fas fa-cloud', 'fas fa-umbrella', 'fas fa-tree',
+    'fas fa-fish', 'fas fa-dog', 'fas fa-cat', 'fas fa-horse',
+    'fas fa-ice-cream', 'fas fa-cookie', 'fas fa-candy-cane', 'fas fa-lemon', 'fas fa-carrot',
+    'fas fa-bicycle', 'fas fa-bus', 'fas fa-train', 'fas fa-plane', 'fas fa-ship'
+];
+const objectNames = [
+    'stars', 'hearts', 'bells', 'apples', 'cars',
+    'suns', 'moons', 'clouds', 'umbrellas', 'trees',
+    'fish', 'dogs', 'cats', 'horses',
+    'ice creams', 'cookies', 'candy canes', 'lemons', 'carrots',
+    'bicycles', 'buses', 'trains', 'planes', 'ships'
+];
+const diceIcons = ['fa-solid fa-square', 'fas fa-dice-one', 'fas fa-dice-two', 'fas fa-dice-three', 'fas fa-dice-four', 'fas fa-dice-five'];
 let currentCount = 0;
 let targetCount = 0;
 let currentObjectIndex = 0;
@@ -22,12 +34,14 @@ function getRandomPosition(gameArea, objectSize) {
     return [randomX, randomY];
 }
 
-function setupGame() {
+async function setupGame() {
+    await fadeOut();
+
     const promptElement = document.getElementById('prompt');
     const objectsArea = document.getElementById('objects-area');
     const numbersContainer = document.getElementById('numbers');
     
-    targetCount = generateRandomNumber(1, getLevelMaxObjects());
+    targetCount = generateRandomNumber(0, getLevelMaxObjects());
     currentObjectIndex = Math.floor(Math.random() * objects.length);
     objectsArea.innerHTML = '';
     
@@ -45,7 +59,7 @@ function setupGame() {
 
     // Add extra objects for Level 3 and above
     if (currentLevel >= 3) {
-        const extraObjects = generateRandomNumber(0, 2);
+        const extraObjects = generateRandomNumber(0, currentLevel >= 4 ? 3 : 2);
         for (let i = 0; i < extraObjects; i++) {
             let extraObjectIndex;
             do {
@@ -56,14 +70,14 @@ function setupGame() {
     }
 
     numbersContainer.innerHTML = '';
-    for (let i = 0; i < getLevelMaxObjects(); i++) {
+    for (let i = 0; i <= getLevelMaxObjects(); i++) {
         const numberElement = document.createElement('div');
         numberElement.className = 'number';
         numberElement.innerHTML = `
             <i class="${diceIcons[i]}"></i>
-            <span class="arabic">${i + 1}</span>
+            <span class="arabic">${i}</span>
         `;
-        numberElement.onclick = () => checkAnswer(i + 1);
+        numberElement.onclick = () => checkAnswer(i);
         numbersContainer.appendChild(numberElement);
     }
 
@@ -71,6 +85,8 @@ function setupGame() {
 
     // Update level indicator
     document.getElementById('level-indicator').textContent = `Level ${currentLevel}`;
+
+    await fadeIn();
 }
 
 function placeObject(objectsArea, placedObjects, objectClass, objectSize, minDistance, isExtra = false) {
@@ -122,21 +138,23 @@ function countExtraObject(element) {
     }
 }
 
-function checkAnswer(number) {
-    const numberWords = ['one', 'two', 'three', 'four', 'five'];
-    const numberWord = numberWords[number - 1];
+async function checkAnswer(number) {
+    const numberWords = ['zero', 'one', 'two', 'three', 'four', 'five'];
+    const numberWord = numberWords[number];
     
     if (number === targetCount) {
         speak(`${numberWord} is correct! Well done!`);
-        document.querySelectorAll('.number')[number - 1].classList.add('correct');
+        document.querySelectorAll('.number')[number].classList.add('correct');
         correctStreak++;
         if (correctStreak === 5) {
-            currentLevel = Math.min(currentLevel + 1, 5);
+            await fadeOut();
+            currentLevel = Math.min(currentLevel + 1, 6);
             correctStreak = 0;
             speak(`Great job! You've reached level ${currentLevel}!`);
+            await fadeIn();
         }
-        setTimeout(() => {
-            setupGame();
+        setTimeout(async () => {
+            await setupGame();
         }, 2000);
     } else {
         correctStreak = 0;
@@ -157,7 +175,8 @@ function getLevelMaxObjects() {
         case 3: return 3;
         case 4: return 4;
         case 5: return 5;
-        default: return 5;
+        case 6: return 6;
+        default: return 6;
     }
 }
 
@@ -182,8 +201,26 @@ function speak(text, highlight = false) {
     window.speechSynthesis.speak(utterance);
 }
 
+function fadeOut() {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('transition-overlay');
+        overlay.classList.add('active');
+        setTimeout(resolve, 500);
+    });
+}
+
+function fadeIn() {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('transition-overlay');
+        overlay.classList.remove('active');
+        setTimeout(resolve, 500);
+    });
+}
+
 // Initial setup
-setupGame();
+(async function() {
+    await setupGame();
+})();
 
 // Recalculate positions on window resize
-window.addEventListener('resize', setupGame);
+window.addEventListener('resize', async () => await setupGame());
