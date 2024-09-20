@@ -19,6 +19,7 @@ let currentObjectIndex = 0;
 let currentLevel = 1;
 let correctStreak = 0;
 let firstAttempt = true;
+let isClickable = true;
 
 function generateRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -144,6 +145,8 @@ function countExtraObject(element) {
 }
 
 async function checkAnswer(number) {
+    if (!isClickable) return;
+
     const numberWords = ['zero', 'one', 'two', 'three', 'four', 'five'];
     const numberWord = numberWords[number];
     
@@ -167,6 +170,7 @@ async function checkAnswer(number) {
             await setupGame();
         }, 2000);
     } else {
+        isClickable = false;
         correctStreak = 0;
         let feedback;
         if (number < targetCount) {
@@ -175,6 +179,13 @@ async function checkAnswer(number) {
             feedback = `${numberWord} is incorrect. There are fewer than ${numberWord} ${objectNames[currentObjectIndex]}.`;
         }
         speak(feedback);
+
+        // Disable clicking for 5 seconds
+        document.querySelectorAll('.number').forEach(el => el.classList.add('disabled'));
+        setTimeout(() => {
+            isClickable = true;
+            document.querySelectorAll('.number').forEach(el => el.classList.remove('disabled'));
+        }, 5000);
     }
     firstAttempt = false;
 }
