@@ -18,6 +18,7 @@ let targetCount = 0;
 let currentObjectIndex = 0;
 let currentLevel = 1;
 let correctStreak = 0;
+let firstAttempt = true;
 
 function generateRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -70,7 +71,7 @@ async function setupGame() {
     }
 
     numbersContainer.innerHTML = '';
-    for (let i = 0; i <= getLevelMaxObjects(); i++) {
+    for (let i = 0; i <= 6; i++) {
         const numberElement = document.createElement('div');
         numberElement.className = 'number';
         numberElement.innerHTML = `
@@ -78,6 +79,9 @@ async function setupGame() {
             <span class="arabic">${i}</span>
         `;
         numberElement.onclick = () => checkAnswer(i);
+        if (i > getLevelMaxObjects()) {
+            numberElement.classList.add('hidden');
+        }
         numbersContainer.appendChild(numberElement);
     }
 
@@ -87,6 +91,7 @@ async function setupGame() {
     document.getElementById('level-indicator').textContent = `Level ${currentLevel}`;
 
     await fadeIn();
+    firstAttempt = true;  // Reset firstAttempt for each new game
 }
 
 function placeObject(objectsArea, placedObjects, objectClass, objectSize, minDistance, isExtra = false) {
@@ -145,14 +150,19 @@ async function checkAnswer(number) {
     if (number === targetCount) {
         speak(`${numberWord} is correct! Well done!`);
         document.querySelectorAll('.number')[number].classList.add('correct');
-        correctStreak++;
-        if (correctStreak === 5) {
-            await fadeOut();
-            currentLevel = Math.min(currentLevel + 1, 6);
-            correctStreak = 0;
-            speak(`Great job! You've reached level ${currentLevel}!`);
-            await fadeIn();
+        
+        if (firstAttempt) {
+            correctStreak++;
+            if (correctStreak === 5) {
+                await fadeOut();
+                currentLevel = Math.min(currentLevel + 1, 6);
+                correctStreak = 0;
+                speak(`Great job! You've reached level ${currentLevel}!`);
+                updateVisibleNumbers();
+                await fadeIn();
+            }
         }
+        
         setTimeout(async () => {
             await setupGame();
         }, 2000);
@@ -166,6 +176,7 @@ async function checkAnswer(number) {
         }
         speak(feedback);
     }
+    firstAttempt = false;
 }
 
 function getLevelMaxObjects() {
@@ -205,7 +216,7 @@ function fadeOut() {
     return new Promise(resolve => {
         const overlay = document.getElementById('transition-overlay');
         overlay.classList.add('active');
-        setTimeout(resolve, 500);
+        setTimeout(resolve, 1500);
     });
 }
 
@@ -213,13 +224,27 @@ function fadeIn() {
     return new Promise(resolve => {
         const overlay = document.getElementById('transition-overlay');
         overlay.classList.remove('active');
-        setTimeout(resolve, 500);
+        setTimeout(resolve, 1500);
+    });
+}
+
+// Add this new function
+function updateVisibleNumbers() {
+    const maxObjects = getLevelMaxObjects();
+    const numberElements = document.querySelectorAll('.number');
+    numberElements.forEach((element, index) => {
+        if (index <= maxObjects) {
+            element.classList.remove('hidden');
+        } else {
+            element.classList.add('hidden');
+        }
     });
 }
 
 // Initial setup
 (async function() {
     await setupGame();
+    updateVisibleNumbers();
 })();
 
 // Recalculate positions on window resize
