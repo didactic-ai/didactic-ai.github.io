@@ -22,7 +22,23 @@ let firstAttempt = true;
 let isClickable = true;
 
 function generateRandomNumber(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+    const maxAllowed = getLevelMaxObjects();
+    const range = max - min + 1;
+    let randomValue;
+
+    // Increase probability for higher numbers and max allowed
+    do {
+        const raw = Math.random();
+        const skewed = Math.pow(raw, 0.7); // Adjust this exponent to control skew
+        randomValue = Math.floor(skewed * range) + min;
+    } while (randomValue > maxAllowed);
+
+    // 20% chance to get the max allowed number
+    if (Math.random() < 0.2) {
+        return maxAllowed;
+    }
+
+    return randomValue;
 }
 
 function getRandomPosition(gameArea, objectSize) {
@@ -47,7 +63,7 @@ async function setupGame() {
     currentObjectIndex = Math.floor(Math.random() * objects.length);
     objectsArea.innerHTML = '';
     
-    const promptText = `Count how many ${objectNames[currentObjectIndex]}?`;
+    const promptText = `Count how many ${objectNames[currentObjectIndex]}.`;
     promptElement.innerHTML = promptText.split(' ').map(word => `<span>${word}</span>`).join(' ');
     speak(promptText, true);
     
@@ -150,6 +166,14 @@ async function checkAnswer(number) {
     const numberWords = ['zero', 'one', 'two', 'three', 'four', 'five'];
     const numberWord = numberWords[number];
     
+    // Disable all buttons for 3 seconds
+    isClickable = false;
+    document.querySelectorAll('.number').forEach(el => el.classList.add('disabled'));
+    setTimeout(() => {
+        isClickable = true;
+        document.querySelectorAll('.number').forEach(el => el.classList.remove('disabled'));
+    }, 3000);
+    
     if (number === targetCount) {
         speak(`${numberWord} is correct! Well done!`);
         document.querySelectorAll('.number')[number].classList.add('correct');
@@ -170,7 +194,6 @@ async function checkAnswer(number) {
             await setupGame();
         }, 2000);
     } else {
-        isClickable = false;
         correctStreak = 0;
         let feedback;
         if (number < targetCount) {
@@ -180,12 +203,11 @@ async function checkAnswer(number) {
         }
         speak(feedback);
 
-        // Disable clicking for 5 seconds
-        document.querySelectorAll('.number').forEach(el => el.classList.add('disabled'));
+        // Highlight the incorrect button red
+        document.querySelectorAll('.number')[number].classList.add('incorrect');
         setTimeout(() => {
-            isClickable = true;
-            document.querySelectorAll('.number').forEach(el => el.classList.remove('disabled'));
-        }, 5000);
+            document.querySelectorAll('.number')[number].classList.remove('incorrect');
+        }, 3000);
     }
     firstAttempt = false;
 }

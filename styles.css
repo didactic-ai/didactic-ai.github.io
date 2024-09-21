@@ -21,6 +21,8 @@ body {
     flex-direction: column;
     max-height: 100vh;
     overflow: hidden;
+    padding-top: env(safe-area-inset-top, 20px);
+    padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
 #prompt {
@@ -144,4 +146,9 @@ body {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+}
+
+.number.incorrect {
+    background-color: #ffcccc;
+    border-color: #ff0000;
 }
